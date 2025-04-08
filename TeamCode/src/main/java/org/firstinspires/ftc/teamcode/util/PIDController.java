@@ -25,8 +25,8 @@ public class PIDController {
     }
 
     public double calculate(double input, double currentTime) {
+        double difference = this.setpoint - input;
         if (this.lastTime != -1) {
-            double difference = this.setpoint - input;
             double timeInterval = currentTime - this.lastTime;
             this.lastTime = currentTime;
             this.integral += difference * timeInterval;
@@ -35,7 +35,6 @@ public class PIDController {
     
             return output;
         } else {
-            double difference = this.setpoint - input;
             this.lastTime = currentTime;
             this.lastInput = input;
 

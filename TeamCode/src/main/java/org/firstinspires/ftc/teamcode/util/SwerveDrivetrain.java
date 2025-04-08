@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.util;
 
+import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
+
 public class SwerveDrivetrain {
 	private double wheelSeparation = 0;
 	public double wheelDiameter = 0;
 	public double gearing = 0;
 	public double maxSpeed = 0;
-	private final double angleThreshold = 15;
+
 	private final SwerveModule[] modules;
 
 	public SwerveDrivetrain(SwerveModule[] modules) {
@@ -84,7 +86,7 @@ public class SwerveDrivetrain {
 		states[1] = new ModuleState(wheel_2_v * this.gearing / (Math.PI * this.wheelDiameter),
 				wheel_2_theta + this.getHeadingDegrees());
 
-		if (this.modules[0].getAngleDifference(states[0].theta) > this.angleThreshold || this.modules[1].getAngleDifference(states[1].theta) > this.angleThreshold) {
+		if (this.modules[0].getAngleDifference(states[0].theta) > DrivetrainConstants.angleThreshold || this.modules[1].getAngleDifference(states[1].theta) > DrivetrainConstants.angleThreshold) {
 			states[0].rpm = 0;
 			states[1].rpm = 0;
 		}

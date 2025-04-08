@@ -2,24 +2,21 @@ package org.firstinspires.ftc.teamcode.util;
 
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 
 public class SwerveModule {
 	private final DcMotor motorOne;
 	private final DcMotor motorTwo;
 	private final AnalogInput encoder;
 	private final double offset;
-	private final double angleTolerance = 1;
-	private final double gearing;
-	private final double maxRPM = 6000;
 	public ModuleState setpoint;
 	private final PIDController turnController;
 
-	public SwerveModule(AnalogInput encoder, double encoderOffset, DcMotor motorOne, DcMotor motorTwo, double gearing) {
+	public SwerveModule(AnalogInput encoder, double encoderOffset, DcMotor motorOne, DcMotor motorTwo) {
 		this.motorOne = motorOne;
 		this.motorTwo = motorTwo;
 		this.encoder = encoder;
 		this.offset = encoderOffset;
-		this.gearing = gearing;
 
 		turnController = new PIDController(.01, 0, 0);
 	}
@@ -39,7 +36,7 @@ public class SwerveModule {
 	}
 
 	public ModuleState getState() {
-		return new ModuleState(this.maxRPM * this.gearing * (this.motorOne.getPower() - this.motorTwo.getPower()),
+		return new ModuleState(DrivetrainConstants.motorMaxRpm * DrivetrainConstants.gearing * (this.motorOne.getPower() - this.motorTwo.getPower()),
 				this.getAngle());
 	}
 
@@ -57,7 +54,7 @@ public class SwerveModule {
 			this.setpoint = state;
 		}
 		
-		double power = state.rpm * (this.gearing / this.maxRPM);
+		double power = state.rpm * (DrivetrainConstants.gearing / DrivetrainConstants.motorMaxRpm);
 		this.turnController.setSetpoint(this.setpoint.theta);
 		double turnPower = this.turnController.calculate(this.getAngle());
 		if (Math.abs(turnPower) > (1-Math.abs(power))) {

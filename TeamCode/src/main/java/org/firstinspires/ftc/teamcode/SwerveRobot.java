@@ -34,10 +34,8 @@ public class SwerveRobot extends LinearOpMode {
         AnalogInput frontEncoder = hardwareMap.get(AnalogInput.class, "backEncoder");
         AnalogInput backEncoder = hardwareMap.get(AnalogInput.class, "frontEncoder");
 
-		frontSwerveModule = new SwerveModule(frontEncoder, DrivetrainConstants.frontEncoderOffset, fr, fl,
-				DrivetrainConstants.gearing);
-		backSwerveModule = new SwerveModule(backEncoder, DrivetrainConstants.backEncoderOffset, br, bl,
-				DrivetrainConstants.gearing);
+		frontSwerveModule = new SwerveModule(frontEncoder, DrivetrainConstants.frontEncoderOffset, fr, fl);
+		backSwerveModule = new SwerveModule(backEncoder, DrivetrainConstants.backEncoderOffset, br, bl);
 
 		drivetrain = new SwerveDrivetrain(new SwerveModule[]{frontSwerveModule, backSwerveModule})
 				.withGearing(DrivetrainConstants.gearing)
@@ -58,8 +56,7 @@ public class SwerveRobot extends LinearOpMode {
 			 backSwerveModule.runMotors(-this.gamepad1.right_stick_y,
 			 -this.gamepad1.right_stick_x);
 			*/
-            drivetrain.driveWithJoysticks(this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x,
-					-this.gamepad1.right_stick_x);
+			drivetrain.driveWithJoysticks(this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x);
 
 			telemetry.addData("FrontModuleState", frontSwerveModule.getState());
 			telemetry.addData("FrontModuleSetpoint", frontSwerveModule.setpoint);

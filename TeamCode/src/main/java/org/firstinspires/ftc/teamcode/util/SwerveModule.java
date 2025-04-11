@@ -18,25 +18,17 @@ public class SwerveModule {
 		this.encoder = encoder;
 		this.offset = encoderOffset;
 
-		turnController = new PIDController(.01, 0, 0);
-	}
-
-	public AnalogInput getEncoder() {
-		return encoder;
+		turnController = new PIDController(.035, 0, 0);
+		turnController.setTolerance(1.5);
+		turnController.enableContinuousInput(0, 360);
 	}
 
 	public double getAngle() {
 		return encoder.getVoltage() * (360. / encoder.getMaxVoltage()) - offset;
 	}
 
-	public double getAngleDifference(double angle) {
-		return Math.min(Math.abs(this.getAngle() - angle),
-				Math.min(Math.abs((this.getAngle() + 360) - angle),
-						Math.abs(this.getAngle() - (angle + 360))));
-	}
-
 	public ModuleState getState() {
-		return new ModuleState(DrivetrainConstants.motorMaxRpm * DrivetrainConstants.gearing * (this.motorOne.getPower() - this.motorTwo.getPower()),
+		return new ModuleState(DrivetrainConstants.motorMaxRpm * (this.motorOne.getPower() - this.motorTwo.getPower()),
 				this.getAngle());
 	}
 
@@ -46,19 +38,17 @@ public class SwerveModule {
 	}
 
 	public void setState(ModuleState state) {
-		double angleDiff = this.getAngleDifference(state.theta);
-		
-		if (angleDiff > 90) {
-			this.setpoint = new ModuleState(state.rpm * -1, (state.theta + 180) % 360);
-		} else {
-			this.setpoint = state;
-		}
-		
-		double power = state.rpm * (DrivetrainConstants.gearing / DrivetrainConstants.motorMaxRpm);
 		this.turnController.setSetpoint(this.setpoint.theta);
+		if (this.turnController.getError(this.getAngle()) > 90)  {
+			this.setpoint.theta = (this.setpoint.theta + 180) % 360;
+			this.setpoint.rpm *= -1;
+			this.turnController.setSetpoint(this.setpoint.theta);
+		}
+
+		double power = state.rpm/DrivetrainConstants.motorMaxRpm;
 		double turnPower = this.turnController.calculate(this.getAngle());
-		if (Math.abs(turnPower) > (1-Math.abs(power))) {
-			turnPower = Math.copySign(1-Math.abs(power), turnPower);
+		if (Math.abs(power) > (1-Math.abs(turnPower))) {
+			power = Math.copySign(1-Math.abs(turnPower), power);
 		}
 		
 		this.runMotors(power + turnPower, -power + turnPower);

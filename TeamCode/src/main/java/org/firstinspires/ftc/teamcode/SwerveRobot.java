@@ -10,6 +10,8 @@ import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.util.SwerveDrivetrain;
 import org.firstinspires.ftc.teamcode.util.SwerveModule;
 
+import java.util.Arrays;
+
 @TeleOp(name = "Drive With Joysticks", group = "Linear OpMode")
 
 public class SwerveRobot extends LinearOpMode {
@@ -56,12 +58,11 @@ public class SwerveRobot extends LinearOpMode {
 			 backSwerveModule.runMotors(-this.gamepad1.right_stick_y,
 			 -this.gamepad1.right_stick_x);
 			*/
-			drivetrain.driveWithJoysticks(this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x);
+			drivetrain.driveWithJoysticks(-this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x);
 
 			telemetry.addData("FrontModuleState", frontSwerveModule.getState());
 			telemetry.addData("FrontModuleSetpoint", frontSwerveModule.setpoint);
-			telemetry.addData("BackModule", backSwerveModule.getEncoder().getVoltage());
-			telemetry.addData("BackModuleSetpoint", backSwerveModule.setpoint);
+			telemetry.addData("velocities", Arrays.toString(drivetrain.normalizeRobotVelocity(-this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x)));
 			telemetry.update();
 
 		}

@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
@@ -20,6 +22,7 @@ public class SwerveRobot extends LinearOpMode {
 
     public SwerveModule frontSwerveModule;
 	public SwerveModule backSwerveModule;
+	public IMU imu;
 
 	public SwerveDrivetrain drivetrain;
 
@@ -39,27 +42,26 @@ public class SwerveRobot extends LinearOpMode {
 		frontSwerveModule = new SwerveModule(frontEncoder, DrivetrainConstants.frontEncoderOffset, fr, fl);
 		backSwerveModule = new SwerveModule(backEncoder, DrivetrainConstants.backEncoderOffset, br, bl);
 
-		drivetrain = new SwerveDrivetrain(new SwerveModule[]{frontSwerveModule, backSwerveModule})
+		imu = hardwareMap.get(IMU.class, "imu");
+		IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+				RevHubOrientationOnRobot.LogoFacingDirection.UP,
+				RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+		imu.initialize(parameters);
+		imu.resetYaw();
+
+		drivetrain = new SwerveDrivetrain(new SwerveModule[]{frontSwerveModule, backSwerveModule}, imu)
 				.withGearing(DrivetrainConstants.gearing)
 				.withMaxSpeed(DrivetrainConstants.maxSpeed)
-				.withWheelDiameter(DrivetrainConstants.wheelDiameter)
-				.withWheelSeparation(DrivetrainConstants.wheelSeparation);
+				.withWheelDiameter(DrivetrainConstants.wheelDiameter);
 
 		waitForStart();
 		runtime.reset();
 
-		telemetry.addData("Status", "Running");
-		telemetry.update();
-
 		while (opModeIsActive()) {
-			/*
-			 frontSwerveModule.runMotors(-this.gamepad1.left_stick_y,
-			 -this.gamepad1.left_stick_x);
-			 backSwerveModule.runMotors(-this.gamepad1.right_stick_y,
-			 -this.gamepad1.right_stick_x);
-			*/
 			drivetrain.driveWithJoysticks(-this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x);
-
+			if (gamepad1.options) {
+				imu.resetYaw();
+			}
 			telemetry.addData("FrontModuleState", frontSwerveModule.getState());
 			telemetry.addData("FrontModuleSetpoint", frontSwerveModule.setpoint);
 			telemetry.addData("velocities", Arrays.toString(drivetrain.normalizeRobotVelocity(-this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x)));

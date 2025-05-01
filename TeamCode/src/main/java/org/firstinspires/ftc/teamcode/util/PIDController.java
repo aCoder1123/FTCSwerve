@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.util;
 
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 public class PIDController {
     public final double kP;
     public final double kI;
@@ -9,9 +11,10 @@ public class PIDController {
     private double setpoint;
     private double integral = 0;
     private double lastTime = -1;
-    private double lastInput;
+    private double lastError;
     private Double continuousInputMin;
     private Double continuousInputMax;
+    private final ElapsedTime runtime = new ElapsedTime();
 
     public PIDController(double kP, double kI, double kD) {
         this.kP = kP;
@@ -20,6 +23,7 @@ public class PIDController {
     }
 
     public void setSetpoint(double setpoint) {
+        this.runtime.reset();
         this.setpoint = setpoint;
     }
     public void setTolerance(double tolerance) {this.tolerance = tolerance;}
@@ -28,71 +32,41 @@ public class PIDController {
         this.continuousInputMax = max;
     }
 
-    public double calculate(double input, double currentTime) {
-        double error = this.getError(input);
-        if (Math.abs(error) < this.tolerance) return 0;
-
-        if (this.lastTime != -1) {
-            double timeInterval = currentTime - this.lastTime;
-            this.lastTime = currentTime;
-            this.integral += error * timeInterval;
-
-            double nonCont = Math.abs(this.setpoint - input);
-            double cont;
-            if (this.setpoint < input) {
-                cont = Math.abs(this.continuousInputMin - input) + Math.abs(this.setpoint - this.continuousInputMax);
-            } else cont = Math.abs(this.continuousInputMax - input) + Math.abs(this.setpoint - this.continuousInputMin);
-
-            double output;
-            if (cont > nonCont) {
-                output = this.kP * (this.setpoint - input) + this.kI * this.integral + this.kD * ((input - this.lastInput) / timeInterval);
-            } else {
-                output = this.kP * -Math.copySign(error, this.setpoint - input) + this.kI * this.integral + this.kD * ((input - this.lastInput) / timeInterval);
-            }
-
-            this.lastInput = input;
-
-            return output;
-        } else {
-            this.lastTime = currentTime;
-
-            return this.calculate(input);
-        }
-    }
-
     public double calculate(double input) {
-        this.lastInput = input;
         double error = this.getError(input);
-        if (Math.abs(error) < this.tolerance) return 0;
-
-        double nonCont = Math.abs(this.setpoint - input);
-        double cont;
-        if (this.setpoint < input) {
-            cont = Math.abs(this.continuousInputMin - input) + Math.abs(this.setpoint - this.continuousInputMax);
-        } else cont = Math.abs(this.continuousInputMax - input) + Math.abs(this.setpoint - this.continuousInputMin);
-
-        double output;
-        if (cont > nonCont) {
-            output = this.kP * (this.setpoint - input);
-        } else {
-            output = this.kP * -Math.copySign(error, this.setpoint - input);
+        if (Math.abs(error) < this.tolerance) {
+            this.lastTime = this.runtime.milliseconds();
+            this.lastError = error;
+            return 0;
         }
 
-        return output;
+        double timeInterval = this.lastTime != -1 ? (this.runtime.milliseconds() - this.lastTime)/1000 : 0;
+        this.lastTime = this.runtime.milliseconds();
+        this.integral += error * timeInterval;
 
+       double output = this.kP * error;
+        if (timeInterval != 0) {
+            output += this.kI * this.integral + this.kD * ((error - this.lastError) / timeInterval);
+        }
+
+        this.lastError = error;
+        return output;
     }
 
     public double getError(double measurement) {
         if (this.continuousInputMin == null) {
-            return Math.abs(this.setpoint - measurement);
+            return this.setpoint - measurement;
         } else {
-            double nonCont = Math.abs(this.setpoint - measurement);
+            double nonCont = this.setpoint - measurement;
             double cont;
             if (this.setpoint < measurement) {
-                cont = Math.abs(this.continuousInputMin - measurement) + Math.abs(this.setpoint - this.continuousInputMax);
-            } else cont = Math.abs(this.continuousInputMax - measurement) + Math.abs(this.setpoint - this.continuousInputMin);
-
-            return Math.min(nonCont, cont);
+                cont = (this.continuousInputMax - measurement) + (this.setpoint - this.continuousInputMin);
+            } else cont = (this.continuousInputMin - measurement) + (this.setpoint - this.continuousInputMax);
+            if (Math.abs(nonCont) < Math.abs(cont)) {
+                return nonCont;
+            } else {
+                return cont;
+            }
         }
     }
 

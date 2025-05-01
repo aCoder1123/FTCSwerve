@@ -10,6 +10,6 @@ public class Constants {
         public static final double angleThreshold = 10; // TODO: find a more intelligent way to determine this threshold
 
         public static final double frontEncoderOffset = 128;
-        public static final double backEncoderOffset = 39.5;
+        public static final double backEncoderOffset = 110;
     }
 }

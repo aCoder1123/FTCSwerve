@@ -10,7 +10,7 @@ public class SwerveModule {
 	private final AnalogInput encoder;
 	private final double offset;
 	public ModuleState setpoint;
-	private final PIDController turnController;
+	public final PIDController turnController;
 
 	public SwerveModule(AnalogInput encoder, double encoderOffset, DcMotor motorOne, DcMotor motorTwo) {
 		this.motorOne = motorOne;
@@ -18,13 +18,13 @@ public class SwerveModule {
 		this.encoder = encoder;
 		this.offset = encoderOffset;
 
-		turnController = new PIDController(.035, 0, 0);
+		turnController = new PIDController(.02, 0, 0.0);
 		turnController.setTolerance(1.5);
 		turnController.enableContinuousInput(0, 360);
 	}
 
 	public double getAngle() {
-		return encoder.getVoltage() * (360. / encoder.getMaxVoltage()) - offset;
+		return (encoder.getVoltage() * (360. / encoder.getMaxVoltage()) - offset + 360) % 360;
 	}
 
 	public ModuleState getState() {
@@ -38,11 +38,11 @@ public class SwerveModule {
 	}
 
 	public void setState(ModuleState state) {
-		this.turnController.setSetpoint(this.setpoint.theta);
-		if (this.turnController.getError(this.getAngle()) > 90)  {
-			this.setpoint.theta = (this.setpoint.theta + 180) % 360;
-			this.setpoint.rpm *= -1;
-			this.turnController.setSetpoint(this.setpoint.theta);
+		this.turnController.setSetpoint(state.theta);
+		if (Math.abs(this.turnController.getError(this.getAngle())) > 90)  {
+			state.theta = (state.theta + 180) % 360;
+			state.rpm *= -1;
+			this.turnController.setSetpoint(state.theta);
 		}
 
 		double power = state.rpm/DrivetrainConstants.motorMaxRpm;
@@ -50,7 +50,7 @@ public class SwerveModule {
 		if (Math.abs(power) > (1-Math.abs(turnPower))) {
 			power = Math.copySign(1-Math.abs(turnPower), power);
 		}
-		
+		this.setpoint = state;
 		this.runMotors(power + turnPower, -power + turnPower);
 	}
 }

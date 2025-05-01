@@ -58,13 +58,21 @@ public class SwerveRobot extends LinearOpMode {
 		runtime.reset();
 
 		while (opModeIsActive()) {
-			drivetrain.driveWithJoysticks(-this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x);
+//			drivetrain.driveWithJoysticks(this.gamepad1.left_stick_x, -this.gamepad1.left_stick_y, -this.gamepad1.right_stick_x);
+			drivetrain.translateWithJoysticks(this.gamepad1.left_stick_x, -this.gamepad1.left_stick_y);
+
 			if (gamepad1.options) {
 				imu.resetYaw();
 			}
-			telemetry.addData("FrontModuleState", frontSwerveModule.getState());
-			telemetry.addData("FrontModuleSetpoint", frontSwerveModule.setpoint);
-			telemetry.addData("velocities", Arrays.toString(drivetrain.normalizeRobotVelocity(-this.gamepad1.left_stick_y, -this.gamepad1.left_stick_x, -this.gamepad1.right_stick_x)));
+			telemetry.addData("FrontModuleState", frontSwerveModule.getState().theta);
+			telemetry.addData("FrontModuleSetpoint", frontSwerveModule.setpoint.theta);
+			telemetry.addData("fError", frontSwerveModule.turnController.getError(frontSwerveModule.getAngle()));
+//			telemetry.addData("BackModuleState", backSwerveModule.getState());
+//			telemetry.addData("BackModuleSetpoint", backSwerveModule.setpoint);
+			telemetry.addData("vx", this.gamepad1.left_stick_x);
+			telemetry.addData("vy", -this.gamepad1.left_stick_y);
+			telemetry.addData("velocities", Arrays.toString(drivetrain.normalizeRobotVelocity(-this.gamepad1.left_stick_x, this.gamepad1.left_stick_y, -this.gamepad1.right_stick_x)));
+			telemetry.addData("imu", drivetrain.getHeadingDegrees());
 			telemetry.update();
 
 		}

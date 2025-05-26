@@ -14,12 +14,14 @@ public class PIDController {
     private double lastError;
     private Double continuousInputMin;
     private Double continuousInputMax;
-    private final ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime;
 
     public PIDController(double kP, double kI, double kD) {
         this.kP = kP;
         this.kI = kI;
         this.kD = kD;
+
+        this.runtime = new ElapsedTime();
     }
 
     public void setSetpoint(double setpoint) {

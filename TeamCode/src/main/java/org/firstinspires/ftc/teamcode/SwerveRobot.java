@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -31,10 +32,10 @@ public class SwerveRobot extends LinearOpMode {
 		telemetry.addData("Status", "Initialized");
 		telemetry.update();
 
-        DcMotor fr = hardwareMap.get(DcMotor.class, "fr");
-        DcMotor fl = hardwareMap.get(DcMotor.class, "fl");
-        DcMotor br = hardwareMap.get(DcMotor.class, "br");
-        DcMotor bl = hardwareMap.get(DcMotor.class, "bl");
+        DcMotorEx fr = hardwareMap.get(DcMotorEx.class, "fr");
+        DcMotorEx fl = hardwareMap.get(DcMotorEx.class, "fl");
+        DcMotorEx br = hardwareMap.get(DcMotorEx.class, "br");
+        DcMotorEx bl = hardwareMap.get(DcMotorEx.class, "bl");
 
         AnalogInput frontEncoder = hardwareMap.get(AnalogInput.class, "backEncoder");
         AnalogInput backEncoder = hardwareMap.get(AnalogInput.class, "frontEncoder");
@@ -64,9 +65,21 @@ public class SwerveRobot extends LinearOpMode {
 			if (gamepad1.options) {
 				imu.resetYaw();
 			}
+			if (gamepad1.dpad_up) {
+				drivetrain.pointAtDegrees(0);
+			}
+			if (gamepad1.dpad_down) {
+				drivetrain.pointAtDegrees(180);
+			}
+			if (gamepad1.dpad_right) {
+				drivetrain.pointAtDegrees(270);
+			}
+			if (gamepad1.dpad_left) {
+				drivetrain.pointAtDegrees(90);
+			}
 			telemetry.addData("FrontModuleState", frontSwerveModule.getState().theta);
 			telemetry.addData("FrontModuleSetpoint", frontSwerveModule.setpoint.theta);
-			telemetry.addData("fError", frontSwerveModule.turnController.getError(frontSwerveModule.getAngle()));
+			telemetry.addData("fError", frontSwerveModule.turnController.getError(frontSwerveModule.getTurningAngle()));
 //			telemetry.addData("BackModuleState", backSwerveModule.getState());
 //			telemetry.addData("BackModuleSetpoint", backSwerveModule.setpoint);
 			telemetry.addData("vx", this.gamepad1.left_stick_x);

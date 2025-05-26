@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.util;
 
-import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
+import static org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants.*;
 
 import com.qualcomm.robotcore.hardware.IMU;
 
@@ -37,10 +37,21 @@ public class SwerveDrivetrain {
 		return this;
 	}
 
+	/**
+	 * Gets the heading as read from the IMU inside the control hub. 0° is forward, angle increases counter-clockwise
+	 * @return the angle in degrees
+	 */
 	public double getHeadingDegrees() {
-		return 360 - (360 + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)) % 360;
+		return (360 + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES) + IMUOffset) % 360;
 	}
 
+	/**
+	 * Normalizes the magnitude of the velocity vector to 1
+	 * @param x x velocity -1 to 1. Positive values indicate right.
+	 * @param y y velocity -1 to 1. Positive values indicate forwards.
+	 * @param omega rotational velocity -1 to 1. Positive values indicate counter-clockwise.
+	 * @return Normalized velocities as a list
+	 */
 	public double[] normalizeRobotVelocity(double x, double y, double omega) {
 		double[] normalizedVelocities = new double[] { x, y, omega };
 		double desiredWheelSpeed = Math.sqrt(x * x + y * y) + omega;
@@ -50,15 +61,15 @@ public class SwerveDrivetrain {
 			}
 		}
 
-		return normalizedVelocities; //[x - side to side, y - forward backward, theta - rotation (0° = straight forward)]
+		return normalizedVelocities;
 	}
 
 	public ModuleState[] calculateModuleStates(double[] robotVelocity) {
 		ModuleState[] states = new ModuleState[2];
 
 		if (robotVelocity[0] == 0 && robotVelocity[1] == 0 && robotVelocity[2] == 0) {
-			states[0] = new ModuleState(0, modules[0].getAngle());
-			states[1] = new ModuleState(0, modules[1].getAngle());
+			states[0] = new ModuleState(0, modules[0].getTurningAngle());
+			states[1] = new ModuleState(0, modules[1].getTurningAngle());
 			return states;
 		}
 
@@ -115,43 +126,36 @@ public class SwerveDrivetrain {
 		return states;
 	}
 
-	public ModuleState[] calculateModuleStatesTranslation(double[] robotVelocity) {
-		ModuleState[] states = new ModuleState[2];
-		double rpm = DrivetrainConstants.motorMaxRpm * Math.sqrt(robotVelocity[0] * robotVelocity[0] + robotVelocity[1] * robotVelocity[1]);
+	public ModuleState calculateModuleStateTranslation(double[] robotVelocity) {
+		double wheelRPM = motorMaxRpm * gearing * Math.sqrt(robotVelocity[0] * robotVelocity[0] + robotVelocity[1] * robotVelocity[1]);
 		double angle;
 		if (robotVelocity[0] == 0 && robotVelocity[1] == 0) {
-			states[0] = new ModuleState(0, modules[0].getAngle());
-			states[1] = new ModuleState(0, modules[1].getAngle());
-			return states;
+			return new ModuleState(0, modules[0].getTurningAngle());
 		} else if (robotVelocity[0] == 0) {
-			angle = (robotVelocity[1] > 0 ? 180 : 0);
+			angle = (robotVelocity[1] > 0 ? 0 : 180);
 		} else if (robotVelocity[1] == 0) {
 			angle = (robotVelocity[0] > 0 ? 90 : 270);
 		} else {
-			angle = 360 - ((Math.toDegrees(Math.atan(robotVelocity[1]/robotVelocity[0])) + 360 ) % 360);
-			if (robotVelocity[1] < 0) {
-				angle = (angle + 180) % 360;
+			angle = ((Math.toDegrees(Math.atan(robotVelocity[1]/robotVelocity[0])) + 360 ) % 360);
+			if (robotVelocity[0] < 0) {
+				angle = (angle + 180) % 360; //flipping angle to correct quadrant if necessary
 			}
-			angle = (angle + 180) % 360;
+
+			angle = (angle + 90) % 360; // 0° is forward
 		}
-		angle = (angle + this.getHeadingDegrees()) % 360;
+		angle = (angle - this.getHeadingDegrees() + 360) % 360; // apply rotational offset for field relative and ensure angle still in range
 
-		states[0] = new ModuleState(rpm,
-				angle );
-		states[1] = new ModuleState(rpm,
-				angle);
-
-//		if (this.modules[0].getAngleDifference(states[0].theta) > DrivetrainConstants.angleThreshold || this.modules[1].getAngleDifference(states[1].theta) > DrivetrainConstants.angleThreshold) {
-//			states[0].rpm = 0;
-//			states[1].rpm = 0;
-//		}
-
-		return states;
+		return new ModuleState(wheelRPM, angle); //both wheels are the same, only returns one state
 	}
 
 	public void setStates(ModuleState[] states) {
 		this.modules[0].setState(states[0]);
 		this.modules[1].setState(states[1]);
+	}
+
+	public void setStates(ModuleState state) {
+		this.modules[0].setState(state);
+		this.modules[1].setState(state);
 	}
 
 	public void driveWithJoysticks(double x, double y, double theta) {
@@ -161,10 +165,16 @@ public class SwerveDrivetrain {
 		}
 	}
 	public void translateWithJoysticks(double x, double y) {
-		ModuleState[] states = this.calculateModuleStatesTranslation(this.normalizeRobotVelocity(x, y, 0));
-		if (states != null) {
-			this.setStates(states);
+		ModuleState state = this.calculateModuleStateTranslation(this.normalizeRobotVelocity(x, y, 0));
+		if (state != null) {
+			this.setStates(state);
 		}
+	}
+
+	public void pointAtDegrees(double theta) {
+		theta = theta % 360;
+		ModuleState state = new ModuleState(0, theta);
+		this.setStates(state);
 	}
 
 }
